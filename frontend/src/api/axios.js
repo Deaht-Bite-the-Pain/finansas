@@ -1,10 +1,12 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { REACT_APP_API_URL } from '@env';
 
-// Lee la URL de la API desde el archivo .env
-// Cada usuario debe crear su propio .env basado en .env.example
-const API_URL = REACT_APP_API_URL || 'http://localhost:3000/api';
+// ⚠️ IMPORTANTE: Cambia esta IP a la de tu PC
+// Para obtener tu IP: abre PowerShell y corre: ipconfig
+// Busca "IPv4 Address" y reemplaza el número abajo
+// Ejemplo: 192.168.1.50 → http://192.168.1.50:3000/api
+
+const API_URL = 'http://192.168.1.106:3000/api';
 
 const api = axios.create({
   baseURL: API_URL,
