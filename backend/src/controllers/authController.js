@@ -14,6 +14,13 @@ exports.register = async (req, res) => {
     );
     res.status(201).json({ message: 'Usuario creado', user: newUser.rows[0] });
   } catch (error) {
+    console.error('Error en register:', error.message);
+    if (error.code === '23505') {
+      return res.status(409).json({ error: 'Ese email ya está registrado' });
+    }
+    if (error.code === '42P01') {
+      return res.status(500).json({ error: 'Falta la tabla usuarios. Ejecuta setup_completo.sql en pgAdmin' });
+    }
     res.status(500).json({ error: 'Error al registrar usuario. Verifica si el email ya existe.' });
   }
 };

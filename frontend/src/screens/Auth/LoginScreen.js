@@ -3,6 +3,7 @@ import { View, Text, TextInput, Button, Alert, StyleSheet } from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../../api/axios';
+import { getApiErrorMessage } from '../../utils/apiError';
 
 export default function LoginScreen({ navigation }) {
   const { control, handleSubmit, formState: { errors } } = useForm();
@@ -22,7 +23,7 @@ export default function LoginScreen({ navigation }) {
       await AsyncStorage.setItem('userToken', res.data.token);
       navigation.replace('Accounts');
     } catch (error) {
-      Alert.alert('Error', error.response?.data?.error || 'Credenciales incorrectas');
+      Alert.alert('Error', getApiErrorMessage(error, 'Credenciales incorrectas'));
     }
   };
 

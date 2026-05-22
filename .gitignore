@@ -1,0 +1,23 @@
+# Dependencias
+node_modules/
+
+# Secretos (cada quien crea su propio .env)
+backend/.env
+.env
+.env.local
+
+# Expo / React Native
+frontend/.expo/
+frontend/dist/
+frontend/web-build/
+expo-env.d.ts
+
+# Sistema
+.DS_Store
+Thumbs.db
+*.log
+
+# IDE
+.idea/
+.vscode/
+*.swp

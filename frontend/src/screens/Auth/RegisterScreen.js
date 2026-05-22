@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TextInput, Button, Alert, StyleSheet } from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
 import api from '../../api/axios';
+import { getApiErrorMessage } from '../../utils/apiError';
 
 export default function RegisterScreen({ navigation }) {
   const { control, handleSubmit, formState: { errors } } = useForm();
@@ -12,7 +13,7 @@ export default function RegisterScreen({ navigation }) {
       Alert.alert('Éxito', 'Usuario registrado correctamente');
       navigation.navigate('Login');
     } catch (error) {
-      Alert.alert('Error', error.response?.data?.error || 'Error al registrar');
+      Alert.alert('Error', getApiErrorMessage(error, 'Error al registrar'));
     }
   };
 

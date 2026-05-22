@@ -32,11 +32,12 @@ export default function AccountsScreen({ navigation }) {
     <View style={styles.container}>
       <Text style={styles.title}>Mis Cuentas</Text>
       
-      <Button 
-        title="Crear Nueva Cuenta" 
-        onPress={() => navigation.navigate('AddAccount')} 
-      />
-      
+      <Button title="Crear Nueva Cuenta" onPress={() => navigation.navigate('AddAccount')} />
+      <View style={{ height: 8 }} />
+      <Button title="Transacciones" onPress={() => navigation.navigate('Transactions')} />
+      <View style={{ height: 8 }} />
+      <Button title="Presupuestos" onPress={() => navigation.navigate('Budgets')} color="#2563eb" />
+
       <View style={{ height: 20 }} /> 
       
       <FlatList
