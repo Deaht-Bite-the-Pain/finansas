@@ -9,4 +9,17 @@ const pool = new Pool({
   port: process.env.DB_PORT,
 });
 
+// Prueba de conexión a la BD
+pool.query('SELECT NOW()', (err, result) => {
+  if (err) {
+    console.error('❌ ERROR DE CONEXIÓN A LA BASE DE DATOS:', err.message);
+    console.error('   Verifica tu .env: DB_USER, DB_PASSWORD, DB_HOST, DB_NAME, DB_PORT');
+  } else {
+    console.log('✅ CONEXIÓN A BASE DE DATOS EXITOSA');
+    console.log('   BD:', process.env.DB_NAME);
+    console.log('   Host:', process.env.DB_HOST);
+    console.log('   Usuario:', process.env.DB_USER);
+  }
+});
+
 module.exports = pool;

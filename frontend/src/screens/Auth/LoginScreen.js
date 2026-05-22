@@ -12,7 +12,7 @@ export default function LoginScreen({ navigation }) {
     // Validar si ya hay sesión al abrir la app
     const checkToken = async () => {
       const token = await AsyncStorage.getItem('userToken');
-      if (token) navigation.replace('Accounts');
+      if (token) navigation.replace('Dashboard');
     };
     checkToken();
   }, []);
@@ -21,7 +21,7 @@ export default function LoginScreen({ navigation }) {
     try {
       const res = await api.post('/auth/login', data);
       await AsyncStorage.setItem('userToken', res.data.token);
-      navigation.replace('Accounts');
+      navigation.replace('Dashboard');
     } catch (error) {
       Alert.alert('Error', getApiErrorMessage(error, 'Credenciales incorrectas'));
     }

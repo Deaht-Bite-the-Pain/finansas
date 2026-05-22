@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\USUARIO\\\\Desktop\\\\Nueva carpeta\" -Recurse -Depth 2)",
+      "Bash(Select-Object FullName)",
+      "Bash(Head -50)"
+    ]
+  }
+}
