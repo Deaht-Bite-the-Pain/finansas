@@ -2,27 +2,35 @@ import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
-  Button,
-  Alert,
-  StyleSheet,
   ScrollView,
+  StyleSheet,
   TouchableOpacity,
-  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
 import api from '../../api/axios';
+import { getApiErrorMessage } from '../../utils/apiError';
+import Button from '../../components/UI/Button';
+import FinanzasInput from '../../components/UI/TextInput';
+import Card from '../../components/UI/Card';
+import { Colors, Typography, BorderRadius, Spacing, Shadows } from '../../theme/finansasTheme';
+
+const MONTHS = [
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+];
 
 export default function BudgetFormScreen({ navigation, route }) {
   const budgetId = route.params?.budgetId;
   const mes = route.params?.mes;
   const anio = route.params?.anio;
-  const { control, handleSubmit, setValue } = useForm({
+  const { control, handleSubmit, setValue, watch } = useForm({
     defaultValues: { categoria_id: '', limite: '' },
   });
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [formErrors, setFormErrors] = useState({});
+  const selectedCat = watch('categoria_id');
 
   useEffect(() => {
     const load = async () => {
@@ -33,7 +41,7 @@ export default function BudgetFormScreen({ navigation, route }) {
           setValue('categoria_id', String(res.data[0].id));
         }
       } catch {
-        Alert.alert('Error', 'No se pudieron cargar categorías');
+        Alert.alert('Error', 'No se pudieron cargar categorias');
       }
     };
     load();
@@ -58,30 +66,24 @@ export default function BudgetFormScreen({ navigation, route }) {
 
   const validateForm = (data) => {
     const newErrors = {};
-
     if (!budgetId && !data.categoria_id) {
-      newErrors.categoria_id = 'Debe seleccionar una categoría';
+      newErrors.categoria_id = 'Debe seleccionar una categoria';
     }
     if (!data.limite || parseFloat(data.limite) <= 0) {
-      newErrors.limite = 'El límite debe ser mayor a 0';
+      newErrors.limite = 'El limite debe ser mayor a 0';
     }
-
     setFormErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const onSubmit = async (data) => {
-    if (!validateForm(data)) {
-      return;
-    }
-
+    if (!validateForm(data)) return;
     const limite = parseFloat(data.limite);
     setLoading(true);
-
     try {
       if (budgetId) {
         await api.put(`/budgets/${budgetId}`, { limite });
-        Alert.alert('Éxito', 'Presupuesto actualizado correctamente');
+        Alert.alert('Listo', 'Presupuesto actualizado');
       } else {
         await api.post('/budgets', {
           categoria_id: parseInt(data.categoria_id, 10),
@@ -89,106 +91,325 @@ export default function BudgetFormScreen({ navigation, route }) {
           anio,
           limite,
         });
-        Alert.alert('Éxito', 'Presupuesto creado correctamente');
+        Alert.alert('Listo', 'Presupuesto creado');
       }
       navigation.goBack();
     } catch (error) {
-      const errorMsg = error.response?.data?.error || 'Error al guardar el presupuesto. Intenta nuevamente.';
-      Alert.alert('Error', errorMsg);
+      const msg = getApiErrorMessage(error, 'Error al guardar');
+      Alert.alert('Error', msg);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.title}>{budgetId ? 'Editar' : 'Nuevo'} presupuesto</Text>
-      <Text style={styles.subtitle}>Periodo: {mes}/{anio}</Text>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backBtn}
+          onPress={() => navigation.goBack()}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.backText}>{'‹'}</Text>
+        </TouchableOpacity>
+      </View>
+      <Text style={styles.title}>
+        {budgetId ? 'Editar presupuesto' : 'Nuevo presupuesto'}
+      </Text>
+      <Text style={styles.subtitle}>
+        Periodo · {MONTHS[(mes || 1) - 1]} {anio || new Date().getFullYear()}
+      </Text>
 
-      {!budgetId && (
-        <>
-          <Text style={styles.label}>Categoría de gasto *</Text>
+      {/* Category Selector */}
+      {!budgetId ? (
+        <View style={styles.fieldGroup}>
+          <Text style={styles.label}>CATEGORIA DE GASTO</Text>
           <Controller
             control={control}
             name="categoria_id"
             render={({ field: { onChange, value } }) => (
-              <>
-                <View>
-                  {categories.map((c) => (
+              <View style={styles.categoryList}>
+                {categories.map((c) => {
+                  const isSelected = value === String(c.id);
+                  return (
                     <TouchableOpacity
                       key={c.id}
-                      style={[styles.catItem, value === String(c.id) && styles.catItemActive]}
-                      onPress={() => onChange(String(c.id))}
+                      style={[
+                        styles.categoryItem,
+                        isSelected && styles.categoryItemActive,
+                      ]}
+                      onPress={() => {
+                        onChange(String(c.id));
+                        setFormErrors((e) => ({ ...e, categoria_id: null }));
+                      }}
+                      activeOpacity={0.7}
                     >
-                      <Text
-                        style={value === String(c.id) ? styles.catTextActive : styles.catText}
-                      >
-                        {c.nombre}
-                      </Text>
+                      <View style={[styles.categoryDot, { opacity: isSelected ? 1 : 0.25 }]} />
+                      <Text style={styles.categoryName}>{c.nombre}</Text>
+                      {isSelected && <Text style={styles.categoryCheck}>✓</Text>}
                     </TouchableOpacity>
-                  ))}
-                </View>
-                {formErrors.categoria_id && (
-                  <Text style={styles.errorText}>{formErrors.categoria_id}</Text>
-                )}
-              </>
+                  );
+                })}
+              </View>
             )}
           />
-        </>
+          {formErrors.categoria_id && (
+            <Text style={styles.errorText}>{formErrors.categoria_id}</Text>
+          )}
+        </View>
+      ) : (
+        <Card flat style={styles.catDisplay}>
+          <View style={styles.catDisplayDot} />
+          <View>
+            <Text style={styles.catDisplayLabel}>CATEGORIA</Text>
+            <Text style={styles.catDisplayName}>
+              {categories.find((c) => String(c.id) === selectedCat)?.nombre || 'Cargando...'}
+            </Text>
+          </View>
+        </Card>
       )}
 
-      <Text style={styles.label}>Límite mensual ($) *</Text>
-      <Controller
-        control={control}
-        rules={{ required: 'Límite requerido' }}
-        name="limite"
-        render={({ field: { onChange, value } }) => (
-          <>
-            <TextInput
-              placeholder="Ej. 500"
-              keyboardType="decimal-pad"
-              value={value}
-              onChangeText={onChange}
-              style={[styles.input, formErrors.limite && styles.inputError]}
-            />
-            {formErrors.limite && (
-              <Text style={styles.errorText}>{formErrors.limite}</Text>
-            )}
-          </>
+      {/* Amount Input (large mono) */}
+      <View style={styles.fieldGroup}>
+        <Text style={styles.label}>LIMITE MENSUAL</Text>
+        <Controller
+          control={control}
+          name="limite"
+          render={({ field: { onChange, value } }) => (
+            <View style={[
+              styles.amountBox,
+              formErrors.limite && { borderColor: Colors.coral },
+            ]}>
+              <Text style={styles.dollarSign}>$</Text>
+              <FinanzasInput
+                placeholder="500"
+                value={value}
+                onChangeText={(v) => {
+                  onChange(v);
+                  setFormErrors((e) => ({ ...e, limite: null }));
+                }}
+                keyboardType="decimal-pad"
+                editable={!loading}
+              />
+            </View>
+          )}
+        />
+        {formErrors.limite && (
+          <Text style={styles.errorText}>{formErrors.limite}</Text>
         )}
-      />
+      </View>
 
-      <Text style={styles.note}>
-        Las alertas se muestran al alcanzar el 80% (amarillo) y el 100% (rojo) del límite.
-      </Text>
+      {/* Alert Info Note (amber) */}
+      <View style={styles.alertNote}>
+        <Text style={styles.alertIcon}>⚠</Text>
+        <Text style={styles.alertText}>
+          Las alertas se muestran al alcanzar el{' '}
+          <Text style={styles.alertBold}>80%</Text> (amarillo) y el{' '}
+          <Text style={styles.alertBold}>100%</Text> (rojo) del limite.
+        </Text>
+      </View>
 
-      <Button
-        title={loading ? 'Guardando...' : 'Guardar'}
-        onPress={handleSubmit(onSubmit)}
-        disabled={loading}
-      />
-      <View style={{ height: 10 }} />
-      <Button
-        title="Cancelar"
-        onPress={() => navigation.goBack()}
-        color="gray"
-        disabled={loading}
-      />
+      {/* Buttons */}
+      <View style={styles.buttons}>
+        <Button
+          title={loading ? 'Guardando...' : 'Guardar'}
+          variant="primary"
+          onPress={handleSubmit(onSubmit)}
+          disabled={loading}
+          loading={loading}
+          fullWidth
+        />
+        <View style={{ height: Spacing.md }} />
+        <Button
+          title="Cancelar"
+          variant="ghost"
+          onPress={() => navigation.goBack()}
+          disabled={loading}
+          fullWidth
+        />
+      </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, marginTop: 40 },
-  title: { fontSize: 22, fontWeight: 'bold' },
-  subtitle: { fontSize: 14, color: '#666', marginBottom: 16, marginTop: 4 },
-  label: { fontWeight: '600', marginBottom: 6, marginTop: 8, color: '#333' },
-  input: { borderWidth: 1, borderColor: '#ccc', padding: 10, borderRadius: 6, marginBottom: 12 },
-  inputError: { borderColor: '#dc2626', backgroundColor: '#fef2f2' },
-  errorText: { color: '#dc2626', fontSize: 12, marginBottom: 10, marginTop: -8 },
-  catItem: { padding: 10, borderWidth: 1, borderColor: '#eee', borderRadius: 6, marginBottom: 6 },
-  catItemActive: { borderColor: '#2563eb', backgroundColor: '#eff6ff' },
-  catText: { color: '#333' },
-  catTextActive: { color: '#1d4ed8', fontWeight: '600' },
-  note: { fontSize: 12, color: '#666', marginBottom: 16, fontStyle: 'italic' },
+  container: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
+  content: {
+    paddingHorizontal: Spacing.lg + 4,
+    paddingTop: 60,
+    paddingBottom: Spacing.xxl,
+  },
+
+  // Header
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: Spacing.md,
+  },
+  backBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: BorderRadius.sm,
+    backgroundColor: Colors.backgroundWarm,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  backText: {
+    fontSize: 24,
+    fontWeight: '300',
+    color: Colors.ink,
+    marginTop: -2,
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: '600',
+    color: Colors.ink,
+  },
+  subtitle: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: Colors.muted,
+    marginTop: 4,
+    marginBottom: Spacing.xl,
+  },
+
+  // Fields
+  fieldGroup: {
+    marginBottom: Spacing.xl,
+  },
+  label: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: Colors.muted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 6,
+    paddingLeft: 4,
+  },
+
+  // Category list
+  categoryList: {
+    gap: Spacing.sm,
+  },
+  categoryItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 14,
+    backgroundColor: Colors.paper,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: Colors.hairline,
+  },
+  categoryItemActive: {
+    borderColor: Colors.ink,
+    ...Shadows.sm,
+  },
+  categoryDot: {
+    width: 30,
+    height: 30,
+    borderRadius: 8,
+    backgroundColor: Colors.coral,
+  },
+  categoryName: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.ink,
+  },
+  categoryCheck: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: Colors.money,
+  },
+
+  // Category display (edit mode)
+  catDisplay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: Spacing.xl,
+  },
+  catDisplayDot: {
+    width: 32,
+    height: 32,
+    borderRadius: 9,
+    backgroundColor: Colors.coral,
+  },
+  catDisplayLabel: {
+    fontSize: 10,
+    fontWeight: '500',
+    color: Colors.muted,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+  },
+  catDisplayName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.ink,
+    marginTop: 2,
+  },
+
+  // Amount
+  amountBox: {
+    backgroundColor: Colors.paper,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: Colors.hairline,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  dollarSign: {
+    fontSize: 28,
+    fontWeight: '600',
+    color: Colors.ink,
+    fontVariant: ['tabular-nums'],
+    marginBottom: Spacing.lg,
+  },
+
+  // Alert note
+  alertNote: {
+    flexDirection: 'row',
+    gap: 12,
+    padding: 14,
+    backgroundColor: Colors.goldSoft,
+    borderRadius: 14,
+    marginBottom: Spacing.xl,
+  },
+  alertIcon: {
+    fontSize: 20,
+  },
+  alertText: {
+    flex: 1,
+    fontSize: 13,
+    color: '#5C4612',
+    lineHeight: 20,
+  },
+  alertBold: {
+    fontWeight: '700',
+  },
+
+  // Error
+  errorText: {
+    color: Colors.coral,
+    fontSize: 12,
+    fontWeight: '500',
+    paddingLeft: 4,
+    marginTop: 4,
+  },
+
+  // Buttons
+  buttons: {
+    marginTop: Spacing.md,
+  },
 });
