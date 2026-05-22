@@ -1,10 +1,10 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { REACT_APP_API_URL } from '@env';
 
-// Celular físico (Expo Go): usa la IPv4 de tu PC (ipconfig → Wi-Fi).
-// Emulador Android en la misma PC: http://10.0.2.2:3000/api
-// Solo pruebas en navegador web en la PC: http://localhost:3000/api
-const API_URL = 'http://192.168.1.10:3000/api';
+// Lee la URL de la API desde el archivo .env
+// Cada usuario debe crear su propio .env basado en .env.example
+const API_URL = REACT_APP_API_URL || 'http://localhost:3000/api';
 
 const api = axios.create({
   baseURL: API_URL,
