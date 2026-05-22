@@ -6,9 +6,13 @@ import {
   StyleSheet,
   Button,
   ActivityIndicator,
+  Dimensions,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { BarChart, PieChart } from 'react-native-chart-kit';
 import api from '../../api/axios';
+
+const screenWidth = Dimensions.get('window').width;
 
 export default function DashboardScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
@@ -134,6 +138,46 @@ export default function DashboardScreen({ navigation }) {
         </View>
       </View>
 
+      {/* Gráfica Ingresos vs Gastos */}
+      {(summary.totalIncome > 0 || summary.totalExpense > 0) && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Ingresos vs Gastos</Text>
+          <BarChart
+            data={{
+              labels: ['Ingresos', 'Gastos'],
+              datasets: [
+                {
+                  data: [summary.totalIncome, summary.totalExpense],
+                },
+              ],
+            }}
+            width={screenWidth - 32}
+            height={220}
+            yAxisLabel="$"
+            chartConfig={{
+              backgroundColor: '#ffffff',
+              backgroundGradientFrom: '#ffffff',
+              backgroundGradientTo: '#ffffff',
+              decimalPlaces: 0,
+              color: (opacity = 1) => `rgba(37, 99, 235, ${opacity})`,
+              labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+              style: {
+                borderRadius: 8,
+              },
+              propsForDots: {
+                r: '5',
+                strokeWidth: '2',
+                stroke: '#2563eb',
+              },
+            }}
+            style={{
+              marginVertical: 8,
+              borderRadius: 8,
+            }}
+          />
+        </View>
+      )}
+
       {/* Saldo por cuenta */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Saldo por Cuenta</Text>
@@ -156,9 +200,48 @@ export default function DashboardScreen({ navigation }) {
         )}
       </View>
 
+      {/* Gráfica de Torta - Distribución de gastos */}
+      {expenses.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Distribución de Gastos</Text>
+          <View style={styles.chartContainer}>
+            <PieChart
+              data={expenses.slice(0, 5).map((expense, index) => ({
+                name: expense.category.substring(0, 10),
+                population: parseFloat(expense.amount.toFixed(2)),
+                color: [
+                  '#dc2626',
+                  '#ea580c',
+                  '#f59e0b',
+                  '#eab308',
+                  '#84cc16',
+                ][index % 5],
+                legendFontColor: '#333',
+                legendFontSize: 12,
+              }))}
+              width={screenWidth - 32}
+              height={200}
+              chartConfig={{
+                color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+              }}
+              accessor={'population'}
+              backgroundColor={'transparent'}
+              paddingLeft={0}
+              style={{
+                marginVertical: 8,
+                borderRadius: 8,
+              }}
+            />
+          </View>
+          <Text style={styles.chartNote}>
+            {expenses.length > 5 ? `Mostrando top 5 de ${expenses.length} categorías` : ''}
+          </Text>
+        </View>
+      )}
+
       {/* Desglose de gastos por categoría */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Gastos por Categoría</Text>
+        <Text style={styles.sectionTitle}>Gastos por Categoría (Detalle)</Text>
         {expenses.length > 0 ? (
           expenses.map((expense, index) => (
             <View key={index} style={styles.expenseCard}>
@@ -342,6 +425,23 @@ const styles = StyleSheet.create({
   expensePercentage: {
     fontSize: 11,
     color: '#999',
+  },
+
+  // Charts
+  chartContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    padding: 8,
+    marginVertical: 8,
+    alignItems: 'center',
+  },
+  chartNote: {
+    fontSize: 11,
+    color: '#999',
+    textAlign: 'center',
+    marginTop: 4,
   },
 
   // Other
